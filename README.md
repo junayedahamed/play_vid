@@ -2,16 +2,18 @@
 
 A new Flutter project.
 
-## Getting Started
+## Features trying to implement:
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+| Feature                  | How to implement                     |
+| ------------------------ | ------------------------------------ |
+| 📃 List all local videos | `photo_manager`                      |
+| ▶️ Play video            | `better_player`                      |
+| ⏯️ Play / Pause          | built-in                             |
+| ⏭️ Next / Previous       | manage list index in Provider        |
+| 🔳 Fullscreen            | `better_player` + `auto_orientation` |
+| 🔊 Volume up/down        | `volume_controller`                  |
+| 🔇 Mute                  | `better_player.setVolume(0)`         |
+| 💡 Brightness swipe      | `screen_brightness`                  |
+| 🔄 Orientation lock      | `auto_orientation`                   |
+| 🧾 Subtitles             | `better_player`                      |
+| 📺 Resize (fit/fill)     | `BetterPlayerConfiguration`          |
