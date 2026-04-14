@@ -17,3 +17,7 @@ A new Flutter project.
 | 🔄 Orientation lock      | `auto_orientation`                   |
 | 🧾 Subtitles             | `better_player`                      |
 | 📺 Resize (fit/fill)     | `BetterPlayerConfiguration`          |
+
+
+> 🤝 **This is an open-source project, and you are more than welcome to contribute!** 🤝
+
