@@ -21,12 +21,16 @@ class PlayerProgressBar extends StatelessWidget {
         ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+    final bool isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final double horizontalPadding = isLandscape ? 24.0 : 16.0;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
@@ -39,17 +43,18 @@ class PlayerProgressBar extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        SizedBox(
-          height: 30,
-          child: CupertinoSlider(
-            activeColor: CupertinoColors.systemRed,
-            thumbColor: CupertinoColors.systemRed,
-            value: value,
-            onChanged: onSeek,
+          SizedBox(
+            height: 30,
+            width: double.infinity,
+            child: CupertinoSlider(
+              activeColor: CupertinoColors.systemRed,
+              thumbColor: CupertinoColors.systemRed,
+              value: value,
+              onChanged: onSeek,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -22,37 +22,53 @@ class PlayerVolumeOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      color: Colors.black54,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
+          Stack(
+            alignment: Alignment.center,
             children: [
-              Icon(
-                volume == 0 || isMuted
-                    ? CupertinoIcons.speaker_slash_fill
-                    : volume < 0.5
-                    ? CupertinoIcons.speaker_1_fill
-                    : CupertinoIcons.speaker_3_fill,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: CupertinoSlider(
+              SizedBox(
+                width: 100,
+                height: 100,
+                child: CircularProgressIndicator(
                   value: volume,
-                  onChanged: onVolumeChanged,
+                  backgroundColor: Colors.white24,
+                  color: isMuted ? Colors.grey : Colors.white,
+                  strokeWidth: 8,
                 ),
               ),
-              Text(
-                '${(volume * 100).toInt()}%',
-                style: const TextStyle(color: Colors.white),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    volume == 0 || isMuted
+                        ? CupertinoIcons.speaker_slash_fill
+                        : volume < 0.5
+                        ? CupertinoIcons.speaker_1_fill
+                        : CupertinoIcons.speaker_3_fill,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                  Text(
+                    '${(volume * 100).toInt()}%',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 24),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisSize: MainAxisSize.min,
             children: [
               CupertinoButton(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -62,6 +78,7 @@ class PlayerVolumeOverlay extends StatelessWidget {
                 onPressed: () => onToggleMute(!isMuted),
                 child: Text(isMuted ? 'Unmute' : 'Mute'),
               ),
+              const SizedBox(width: 12),
               CupertinoButton(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 color: showSystemUI
