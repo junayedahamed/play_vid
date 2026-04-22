@@ -88,15 +88,32 @@ class PlayerViewModel extends ChangeNotifier {
   double? get currentAspectRatio => _aspectRatios[_currentAspectRatioIndex];
 
   /// The title of the current video asset.
-  String get currentTitle => assetEntities[currentIndex].title ?? "Unknown";
+  String get currentTitle => assetEntities.isEmpty
+      ? ""
+      : assetEntities[currentIndex].title ?? "Unknown";
+
+  /// Whether the player is currently in background audio mode.
+  bool _isBackgroundPlay = false;
+  bool get isBackgroundPlay => _isBackgroundPlay;
 
   PlayerViewModel({required this.assetEntities, required this.currentIndex}) {
-    _init();
+    if (assetEntities.isNotEmpty) {
+      _init();
+    }
+  }
+
+  /// Updates the playlist and index, then re-initializes.
+  Future<void> updateAssets(List<AssetEntity> assets, int index) async {
+    assetEntities.clear();
+    assetEntities.addAll(assets);
+    currentIndex = index;
+    await _reInitialize();
   }
 
   /// Initializes the video player by loading the file from [AssetEntity],
   /// setting up the controller, listeners, and initial volume states.
   Future<void> _init() async {
+    if (assetEntities.isEmpty) return;
     final file = await assetEntities[currentIndex].file;
     if (file == null) return;
 
@@ -122,6 +139,7 @@ class PlayerViewModel extends ChangeNotifier {
   /// It triggers [_handleVideoEnd] when the video reaches its duration.
   void _videoListener() {
     if (_controller == null) return;
+
     if (_controller!.value.position >= _controller!.value.duration) {
       _handleVideoEnd();
     }
@@ -210,18 +228,30 @@ class PlayerViewModel extends ChangeNotifier {
   }
 
   /// Toggles background playback (currently a placeholder).
-  void toggleBackgroundPlay() {}
+  void toggleBackgroundPlay(BuildContext context) {
+    _isBackgroundPlay = !_isBackgroundPlay;
+    if (_isBackgroundPlay) {
+      // Pop the player screen to show the floating bar in the list view
+      Navigator.pop(context);
+    }
+    notifyListeners();
+  }
+
+  /// Exits background mode and returns to full video player.
+  void exitBackgroundMode(BuildContext context) {
+    _isBackgroundPlay = false;
+    notifyListeners();
+  }
 
   /// Toggles between play and pause states.
   void togglePlay() {
     if (_controller == null) return;
     if (_controller!.value.isPlaying) {
-      _controller!.pause();
+      pause();
     } else {
-      _controller!.play();
+      play();
       resetOverlayTimer();
     }
-    notifyListeners();
   }
 
   /// Updates the video playback speed.

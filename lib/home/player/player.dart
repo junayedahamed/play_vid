@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'player_view_model/player_view_model.dart';
@@ -11,111 +10,92 @@ import 'widgets/player_volume_overlay.dart';
 import 'widgets/player_seek_overlay.dart';
 
 class Player extends StatelessWidget {
-  const Player({
-    super.key,
-    required this.assetEntitys,
-    required this.filepath,
-    required this.currentIndex,
-  });
-  final List<AssetEntity> assetEntitys;
-  final String filepath;
-  final int currentIndex;
+  const Player({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => PlayerViewModel(
-        assetEntities: assetEntitys,
-        currentIndex: currentIndex,
-      ),
-      builder: (context, _) {
-        final viewModel = context.watch<PlayerViewModel>();
+    final viewModel = context.watch<PlayerViewModel>();
 
-        if (!viewModel.isInitialized) {
-          return const Scaffold(
-            backgroundColor: Colors.black,
-            body: Center(
-              child: CupertinoActivityIndicator(color: Colors.white),
-            ),
-          );
-        }
+    if (!viewModel.isInitialized) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CupertinoActivityIndicator(color: Colors.white)),
+      );
+    }
 
-        return PopScope(
-          onPopInvokedWithResult: (didPop, result) {
-            viewModel.resetRotation();
-          },
-          child: Scaffold(
-            backgroundColor: Colors.black,
-            body: Center(
-              child: Stack(
-                children: [
-                  _buildVideoSurface(context, viewModel),
-                  if (viewModel.showOverlayProgressBar)
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: PlayerTopBar(
-                        title: viewModel.currentTitle,
-                        playbackSpeed: viewModel.playbackSpeed,
-                        onBack: () => Navigator.pop(context),
-                        onAudioSettings: () =>
-                            _showAudioDialog(context, viewModel),
-                        onBackgroundPlay: viewModel.toggleBackgroundPlay,
-                        onPlaybackSpeedChanged: (speed) =>
-                            viewModel.setPlaybackSpeed(speed),
-                      ),
-                    ),
-                  if (viewModel.showOverlaySoundBar)
-                    Align(
-                      alignment: Alignment.center,
-                      child: PlayerVolumeOverlay(
-                        volume: viewModel.volumeValue,
-                        showSystemUI: viewModel.showSystemUI,
-                        isMuted: viewModel.isMuted,
-                        onVolumeChanged: viewModel.setVolume,
-                        onToggleSystemUI: viewModel.toggleSystemUI,
-                        onToggleMute: (mute) =>
-                            viewModel.updateMuteStatus(mute),
-                      ),
-                    ),
-                  if (viewModel.showOverlaySeek)
-                    Align(
-                      alignment: Alignment.center,
-                      child: PlayerSeekOverlay(seekOffset: viewModel.seekValue),
-                    ),
-                  if (viewModel.showOverlayProgressBar)
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          PlayerProgressBar(
-                            position: viewModel.controller.value.position,
-                            duration: viewModel.controller.value.duration,
-                            onSeek: (val) => viewModel.onSliderSeek(val),
-                            formatDuration: _formatDuration,
-                          ),
-                          PlayerBottomControls(
-                            isPlaying: viewModel.controller.value.isPlaying,
-                            repeatMode: viewModel.repeatMode,
-                            onTogglePlay: viewModel.togglePlay,
-                            onNext: viewModel.playNext,
-                            onPrevious: viewModel.playPrevious,
-                            onToggleRepeat: viewModel.cycleRepeatMode,
-                            onToggleAspectRatio: viewModel.toggleAspectRatio,
-                            onToggleRotation: () =>
-                                viewModel.toggleRotation(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        );
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        viewModel.resetRotation();
       },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Stack(
+            children: [
+              _buildVideoSurface(context, viewModel),
+              if (viewModel.showOverlayProgressBar)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: PlayerTopBar(
+                    title: viewModel.currentTitle,
+                    playbackSpeed: viewModel.playbackSpeed,
+                    onBack: () => Navigator.pop(context),
+                    onAudioSettings: () => _showAudioDialog(context, viewModel),
+                    onBackgroundPlay: () =>
+                        viewModel.toggleBackgroundPlay(context),
+                    onPlaybackSpeedChanged: (speed) =>
+                        viewModel.setPlaybackSpeed(speed),
+                  ),
+                ),
+              if (viewModel.showOverlaySoundBar)
+                Align(
+                  alignment: Alignment.center,
+                  child: PlayerVolumeOverlay(
+                    volume: viewModel.volumeValue,
+                    showSystemUI: viewModel.showSystemUI,
+                    isMuted: viewModel.isMuted,
+                    onVolumeChanged: viewModel.setVolume,
+                    onToggleSystemUI: viewModel.toggleSystemUI,
+                    onToggleMute: (mute) => viewModel.updateMuteStatus(mute),
+                  ),
+                ),
+              if (viewModel.showOverlaySeek)
+                Align(
+                  alignment: Alignment.center,
+                  child: PlayerSeekOverlay(seekOffset: viewModel.seekValue),
+                ),
+              if (viewModel.showOverlayProgressBar)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PlayerProgressBar(
+                        position: viewModel.controller.value.position,
+                        duration: viewModel.controller.value.duration,
+                        onSeek: (val) => viewModel.onSliderSeek(val),
+                        formatDuration: _formatDuration,
+                      ),
+                      PlayerBottomControls(
+                        isPlaying: viewModel.controller.value.isPlaying,
+                        repeatMode: viewModel.repeatMode,
+                        onTogglePlay: viewModel.togglePlay,
+                        onNext: viewModel.playNext,
+                        onPrevious: viewModel.playPrevious,
+                        onToggleRepeat: viewModel.cycleRepeatMode,
+                        onToggleAspectRatio: viewModel.toggleAspectRatio,
+                        onToggleRotation: () =>
+                            viewModel.toggleRotation(context),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
