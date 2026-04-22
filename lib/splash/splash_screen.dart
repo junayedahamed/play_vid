@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:play_vid/home/my_download_vodeos.dart';
+import 'package:play_vid/home/view_model/local_video_fetch.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,6 +10,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final LocalVideoFetch localVideoFetch = LocalVideoFetch();
   void pushToVideoScreen() {
     Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return;
