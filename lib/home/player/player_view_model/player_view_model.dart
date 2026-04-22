@@ -26,6 +26,12 @@ class PlayerViewModel extends ChangeNotifier {
   bool _showOverlaySoundBar = false;
   bool get showOverlaySoundBar => _showOverlaySoundBar;
 
+  bool _showOverlaySeek = false;
+  bool get showOverlaySeek => _showOverlaySeek;
+
+  Duration _seekValue = Duration.zero;
+  Duration get seekValue => _seekValue;
+
   double _volumeValue = 0;
   double get volumeValue => _volumeValue;
 
@@ -233,18 +239,21 @@ class PlayerViewModel extends ChangeNotifier {
 
   void onHorizontalDragStart(DragStartDetails details) {
     if (_controller == null) return;
-    _showOverlayProgressBar = true;
+    // Show the small seek overlay and hide the main progress bar overlay if visible
+    _showOverlaySeek = true;
+    _showOverlayProgressBar = false;
     _dragStartX = details.globalPosition.dx;
     _dragStartPosition = _controller!.value.position;
+    _seekValue = Duration.zero; // Reset current seek offset
     _hideOverlayTimer?.cancel();
     notifyListeners();
   }
 
   void onHorizontalDragUpdate(DragUpdateDetails details, double width) {
     if (_controller == null) return;
-    _showOverlayProgressBar = true;
     final deltaX = details.globalPosition.dx - _dragStartX;
-    const sensitivity = 0.2;
+    // Lower sensitivity for precise seeking
+    const sensitivity = 0.5;
     final seekRelative = (deltaX / width) * sensitivity;
     final seekDuration = _controller!.value.duration * seekRelative;
     var newPosition = _dragStartPosition + seekDuration;
@@ -255,12 +264,18 @@ class PlayerViewModel extends ChangeNotifier {
       newPosition = _controller!.value.duration;
     }
 
+    // Update the seek value for UI display (e.g., +10s or -10s)
+    _seekValue = newPosition - _dragStartPosition;
+
     _controller!.seekTo(newPosition);
     notifyListeners();
   }
 
   void onHorizontalDragEnd(DragEndDetails details) {
-    resetOverlayTimer();
+    // Hide seek overlay immediately on release
+    _showOverlaySeek = false;
+    // We don't necessarily show progress bar here unless we want to
+    notifyListeners();
   }
 
   Future<void> updateMuteStatus(bool isMute) async {

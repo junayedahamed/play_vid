@@ -21,11 +21,22 @@ class PlayerVolumeOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine the speaker icon based on volume level and mute status
+    final IconData speakerIcon = isMuted || volume == 0
+        ? CupertinoIcons.speaker_slash_fill
+        : volume < 0.3
+        ? CupertinoIcons
+              .speaker_1_fill // Low sound
+        : volume < 0.7
+        ? CupertinoIcons
+              .speaker_2_fill // Medium sound
+        : CupertinoIcons.speaker_3_fill; // High sound
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.black.withOpacity(0.7), // Darker for better visibility
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -33,59 +44,32 @@ class PlayerVolumeOverlay extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
+              // Outer ring progress bar
               SizedBox(
-                width: 100,
-                height: 100,
+                width: 70,
+                height: 70,
                 child: CircularProgressIndicator(
                   value: volume,
-                  backgroundColor: Colors.white24,
-                  color: isMuted ? Colors.grey : Colors.white,
-                  strokeWidth: 8,
+                  backgroundColor: Colors.white12,
+                  color: isMuted ? Colors.redAccent : Colors.white,
+                  strokeWidth: 6,
                 ),
               ),
+              // Logical grouping for icon and percentage
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    volume == 0 || isMuted
-                        ? CupertinoIcons.speaker_slash_fill
-                        : volume < 0.5
-                        ? CupertinoIcons.speaker_1_fill
-                        : CupertinoIcons.speaker_3_fill,
-                    color: Colors.white,
-                    size: 32,
-                  ),
+                  Icon(speakerIcon, color: Colors.white, size: 28),
+                  const SizedBox(height: 2),
                   Text(
                     '${(volume * 100).toInt()}%',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                color: isMuted
-                    ? CupertinoColors.systemRed
-                    : CupertinoColors.systemGrey,
-                onPressed: () => onToggleMute(!isMuted),
-                child: Text(isMuted ? 'Unmute' : 'Mute'),
-              ),
-              const SizedBox(width: 12),
-              CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                color: showSystemUI
-                    ? CupertinoColors.activeBlue
-                    : CupertinoColors.systemGrey,
-                onPressed: onToggleSystemUI,
-                child: Text(showSystemUI ? 'Hide System UI' : 'Show System UI'),
               ),
             ],
           ),

@@ -8,6 +8,7 @@ import 'widgets/player_top_bar.dart';
 import 'widgets/player_progress_bar.dart';
 import 'widgets/player_bottom_controls.dart';
 import 'widgets/player_volume_overlay.dart';
+import 'widgets/player_seek_overlay.dart';
 
 class Player extends StatelessWidget {
   const Player({
@@ -78,6 +79,11 @@ class Player extends StatelessWidget {
                             viewModel.updateMuteStatus(mute),
                       ),
                     ),
+                  if (viewModel.showOverlaySeek)
+                    Align(
+                      alignment: Alignment.center,
+                      child: PlayerSeekOverlay(seekOffset: viewModel.seekValue),
+                    ),
                   if (viewModel.showOverlayProgressBar)
                     Align(
                       alignment: Alignment.bottomCenter,
@@ -114,26 +120,36 @@ class Player extends StatelessWidget {
   }
 
   Widget _buildVideoSurface(BuildContext context, PlayerViewModel viewModel) {
+    // We use a gesture detector that covers the entire stack area
     return GestureDetector(
+      // Toggle overlay on tap anywhere
       onTap: viewModel.handleTap,
+      // Vertical drag for Volume in center/anywhere
       onVerticalDragStart: viewModel.onVerticalDragStart,
       onVerticalDragUpdate: (details) {
         final box = context.findRenderObject() as RenderBox;
         viewModel.onVerticalDragUpdate(details, box.size.height);
       },
       onVerticalDragEnd: viewModel.onVerticalDragEnd,
+      // Horizontal drag for Seek in center/anywhere
       onHorizontalDragStart: viewModel.onHorizontalDragStart,
       onHorizontalDragUpdate: (details) {
         final box = context.findRenderObject() as RenderBox;
         viewModel.onHorizontalDragUpdate(details, box.size.width);
       },
       onHorizontalDragEnd: viewModel.onHorizontalDragEnd,
-      child: Center(
-        child: AspectRatio(
-          aspectRatio:
-              viewModel.currentAspectRatio ??
-              viewModel.controller.value.aspectRatio,
-          child: VideoPlayer(viewModel.controller),
+      child: Container(
+        // Making the container expand to fill the screen
+        color: Colors.transparent,
+        width: double.infinity,
+        height: double.infinity,
+        child: Center(
+          child: AspectRatio(
+            aspectRatio:
+                viewModel.currentAspectRatio ??
+                viewModel.controller.value.aspectRatio,
+            child: VideoPlayer(viewModel.controller),
+          ),
         ),
       ),
     );
