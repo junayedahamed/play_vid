@@ -5,6 +5,9 @@ import "package:flutter/services.dart";
 import "package:photo_manager/photo_manager.dart";
 import "package:video_player/video_player.dart";
 import "package:volume_controller/volume_controller.dart";
+import "package:audio_service/audio_service.dart";
+import "package:play_vid/main.dart" show audioHandler;
+import "package:play_vid/home/player/audio_player_handler.dart";
 
 enum VideoRepeatMode { off, one, all, shuffle }
 
@@ -100,6 +103,17 @@ class PlayerViewModel extends ChangeNotifier {
     if (assetEntities.isNotEmpty) {
       _init();
     }
+    _setupAudioHandler();
+  }
+
+  void _setupAudioHandler() {
+    // Initial sync
+    if (_controller != null && _controller!.value.isInitialized) {
+      (audioHandler as AudioPlayerHandler).updateMetadata(
+        title: currentTitle,
+        duration: _controller!.value.duration,
+      );
+    }
   }
 
   /// Updates the playlist and index, then re-initializes.
@@ -143,6 +157,22 @@ class PlayerViewModel extends ChangeNotifier {
     if (_controller!.value.position >= _controller!.value.duration) {
       _handleVideoEnd();
     }
+
+    if (_isBackgroundPlay) {
+      (audioHandler as AudioPlayerHandler).updateMetadata(
+        title: currentTitle,
+        duration: _controller!.value.duration,
+      );
+      (audioHandler as AudioPlayerHandler).setPlaybackState(
+        audioHandler.playbackState.value.copyWith(
+          updatePosition: _controller!.value.position,
+          bufferedPosition: _controller!.value.buffered.isNotEmpty
+              ? _controller!.value.buffered.last.end
+              : Duration.zero,
+        ),
+      );
+    }
+
     notifyListeners();
   }
 
@@ -274,12 +304,30 @@ class PlayerViewModel extends ChangeNotifier {
   /// Resumes video playback.
   void play() {
     _controller?.play();
+    (audioHandler as AudioPlayerHandler).setPlaybackState(audioHandler.playbackState.value.copyWith(
+      playing: true,
+      controls: [
+        MediaControl.skipToPrevious,
+        MediaControl.pause,
+        MediaControl.stop,
+        MediaControl.skipToNext,
+      ],
+    ));
     notifyListeners();
   }
 
   /// Pauses video playback.
   void pause() {
     _controller?.pause();
+    (audioHandler as AudioPlayerHandler).setPlaybackState(audioHandler.playbackState.value.copyWith(
+      playing: false,
+      controls: [
+        MediaControl.skipToPrevious,
+        MediaControl.play,
+        MediaControl.stop,
+        MediaControl.skipToNext,
+      ],
+    ));
     notifyListeners();
   }
 
