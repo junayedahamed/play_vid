@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:play_vid/home/player/player.dart';
 import 'package:play_vid/home/player/player_view_model/player_view_model.dart';
 import 'package:play_vid/home/player/widgets/floating_audio_player.dart';
-import 'package:play_vid/home/view_model/local_video_fetch.dart';
+import 'package:play_vid/home/videos/view_model/local_video_fetch.dart';
 import 'package:provider/provider.dart';
 
 class MyDownloadVodeos extends StatelessWidget {

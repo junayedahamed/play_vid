@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:play_vid/home/my_download_vodeos.dart';
+import 'package:play_vid/home/videos/my_download_vodeos.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
