@@ -37,6 +37,7 @@ dependencies:
   video_player: ^2.11.1
   volume_controller: ^3.4.4
   photo_manager: ^3.9.0
+  provider: ^6.1.5+1
 
 dev_dependencies:
   flutter_test:

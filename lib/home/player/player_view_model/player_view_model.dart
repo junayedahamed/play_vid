@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:volume_controller/volume_controller.dart';
 
@@ -23,7 +24,15 @@ class PlayerViewModel extends ChangeNotifier {
 
   double _dragStartVolume = 0;
   double _dragStartY = 0;
+
+  double _dragStartX = 0;
+  Duration _dragStartPosition = Duration.zero;
+
   Timer? _hideOverlayTimer;
+
+  final List<double?> _aspectRatios = [null, 16 / 9, 4 / 3, 1 / 1];
+  int _currentAspectRatioIndex = 0;
+  double? get currentAspectRatio => _aspectRatios[_currentAspectRatioIndex];
 
   PlayerViewModel({required this.filePath}) {
     _init();
@@ -32,8 +41,13 @@ class PlayerViewModel extends ChangeNotifier {
   Future<void> _init() async {
     controller = VideoPlayerController.file(File(filePath));
     await controller.initialize();
+    controller.addListener(_videoListener);
     _volumeValue = await _volumeController.getVolume();
     _isMuted = await _volumeController.isMuted();
+    notifyListeners();
+  }
+
+  void _videoListener() {
     notifyListeners();
   }
 
@@ -57,10 +71,15 @@ class PlayerViewModel extends ChangeNotifier {
   }
 
   void handleTap() {
+    if (_showOverlayProgressBar) {
+      _showOverlayProgressBar = false;
+      notifyListeners();
+      return;
+    }
     _showOverlayProgressBar = true;
     _hideOverlayTimer?.cancel();
     _hideOverlayTimer = Timer(
-      const Duration(seconds: 1, milliseconds: 200),
+      const Duration(seconds: 2, milliseconds: 200),
       () {
         _showOverlayProgressBar = false;
         notifyListeners();
@@ -90,11 +109,34 @@ class PlayerViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void onHorizontalDragStart(DragStartDetails details) {
+    _showOverlayProgressBar = true;
+    _dragStartX = details.globalPosition.dx;
+    _dragStartPosition = controller.value.position;
+    _hideOverlayTimer?.cancel();
+    notifyListeners();
+  }
+
   void onHorizontalDragUpdate(DragUpdateDetails details, double width) {
     _showOverlayProgressBar = true;
-    final relative = details.localPosition.dx / width;
-    final position = controller.value.duration * relative.clamp(0, 1);
-    controller.seekTo(position);
+    // Calculate drag distance from start point
+    final deltaX = details.globalPosition.dx - _dragStartX;
+
+    // Use a sensitivity factor to make seeking less extreme.
+    // 0.2 means a full screen drag moves through 20% of the video.
+    const sensitivity = 0.2;
+    final seekRelative = (deltaX / width) * sensitivity;
+
+    final seekDuration = controller.value.duration * seekRelative;
+    var newPosition = _dragStartPosition + seekDuration;
+
+    if (newPosition < Duration.zero) {
+      newPosition = Duration.zero;
+    } else if (newPosition > controller.value.duration) {
+      newPosition = controller.value.duration;
+    }
+
+    controller.seekTo(newPosition);
     notifyListeners();
   }
 
@@ -122,8 +164,42 @@ class PlayerViewModel extends ChangeNotifier {
 
   bool get showSystemUI => _volumeController.showSystemUI;
 
+  void setVolume(double value) {
+    _volumeValue = value;
+    _volumeController.setVolume(value);
+    notifyListeners();
+  }
+
+  void onSliderSeek(double value) {
+    final destination = controller.value.duration * value;
+    controller.seekTo(destination);
+    notifyListeners();
+  }
+
+  void toggleAspectRatio() {
+    _currentAspectRatioIndex =
+        (_currentAspectRatioIndex + 1) % _aspectRatios.length;
+    notifyListeners();
+  }
+
+  void toggleRotation(BuildContext context) {
+    if (MediaQuery.of(context).orientation == Orientation.portrait) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    }
+  }
+
+  void resetRotation() {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  }
+
   @override
   void dispose() {
+    controller.removeListener(_videoListener);
     controller.dispose();
     _hideOverlayTimer?.cancel();
     super.dispose();
