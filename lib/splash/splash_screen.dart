@@ -12,11 +12,14 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   final LocalVideoFetch localVideoFetch = LocalVideoFetch();
   void pushToVideoScreen() {
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MyDownloadVodeos()),
+        MaterialPageRoute(
+          builder: (context) =>
+              MyDownloadVodeos(localVideoFetch: localVideoFetch),
+        ),
       );
     });
   }

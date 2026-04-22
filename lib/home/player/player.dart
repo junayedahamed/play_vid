@@ -5,15 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:volume_controller/volume_controller.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.filePath});
+class Player extends StatefulWidget {
+  const Player({super.key, required this.filePath});
   final String filePath;
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<Player> createState() => _PlayerState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _PlayerState extends State<Player> {
   late VideoPlayerController _controller;
   late final VolumeController _volumeController;
   // late final StreamSubscription<double> _subscription;

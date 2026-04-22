@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:play_vid/home/home_page.dart';
+import 'package:play_vid/home/player/player.dart';
 import 'package:play_vid/home/view_model/local_video_fetch.dart';
 
 class MyDownloadVodeos extends StatelessWidget {
-  MyDownloadVodeos({super.key});
-  final LocalVideoFetch localVideoFetch = LocalVideoFetch();
+  const MyDownloadVodeos({super.key, required this.localVideoFetch});
+  final LocalVideoFetch localVideoFetch;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class MyDownloadVodeos extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => HomePage(filePath: file.path),
+                            builder: (context) => Player(filePath: file.path),
                           ),
                         );
                       },
