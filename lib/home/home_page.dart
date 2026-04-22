@@ -15,11 +15,17 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late VideoPlayerController _controller;
   late final VolumeController _volumeController;
-  late final StreamSubscription<double> _subscription;
+  // late final StreamSubscription<double> _subscription;
+  bool showOverlayProgressBar = false;
+  bool showOverlaySoundBar = false;
 
   double _currentVolume = 0;
   double _volumeValue = 0;
   bool _isMuted = false;
+  double _dragStartVolume = 0;
+  double _dragStartY = 0;
+  Timer? _hideOverlayTimer;
+
   @override
   void initState() {
     _controller = VideoPlayerController.asset('assets/v.mp4')
@@ -31,9 +37,9 @@ class _HomePageState extends State<HomePage> {
     _volumeController = VolumeController.instance;
 
     // Listen to system volume change
-    _subscription = _volumeController.addListener((volume) {
-      setState(() => _volumeValue = volume);
-    }, fetchInitialVolume: true);
+    // _subscription = _volumeController.addListener((volume) {
+    //   setState(() => _volumeValue = volume);
+    // }, fetchInitialVolume: true);
 
     _volumeController.isMuted().then(
       (isMuted) => setState(() => _isMuted = isMuted),
@@ -74,6 +80,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _controller.dispose();
+    _hideOverlayTimer?.cancel();
     super.dispose();
   }
 
@@ -88,15 +95,58 @@ class _HomePageState extends State<HomePage> {
         child: Stack(
           children: [
             GestureDetector(
-              onHorizontalDragDown: (details) {
-                final box = context.findRenderObject() as RenderBox;
-                final localPosition = box.globalToLocal(details.globalPosition);
-                final relative = localPosition.dx / box.size.width;
-                final position =
-                    _controller.value.duration * relative.clamp(0, 1);
-                _controller.seekTo(position);
+              onTap: () {
+                if (_controller.value.isPlaying) {
+                  // _controller.pause();
+                  showOverlayProgressBar = true;
+                  _hideOverlayTimer = Timer(
+                    const Duration(seconds: 1, milliseconds: 200),
+                    () {
+                      showOverlayProgressBar = false;
+                      setState(() {});
+                    },
+                  );
+                } else {
+                  // _controller.play();
+                  showOverlayProgressBar = true;
+                  _hideOverlayTimer = Timer(
+                    const Duration(seconds: 1, milliseconds: 200),
+                    () {
+                      showOverlayProgressBar = false;
+                      setState(() {});
+                    },
+                  );
+                }
+                setState(() {});
               },
+
+              onVerticalDragStart: (details) async {
+                showOverlaySoundBar = true;
+                _dragStartY = details.globalPosition.dy;
+                _dragStartVolume = await _volumeController.getVolume();
+                setState(() {
+                  _volumeValue = _dragStartVolume;
+                });
+              },
+              onVerticalDragUpdate: (details) {
+                final box = context.findRenderObject() as RenderBox;
+                final deltaY = _dragStartY - details.globalPosition.dy;
+                final volumeDelta = deltaY / box.size.height;
+                final newVolume = (_dragStartVolume + volumeDelta).clamp(
+                  0.0,
+                  1.0,
+                );
+                _volumeController.setVolume(newVolume);
+                setState(() => _volumeValue = newVolume);
+              },
+              onVerticalDragEnd: (details) {
+                showOverlaySoundBar = false;
+                setState(() {});
+              },
+
               onHorizontalDragUpdate: (details) {
+                showOverlayProgressBar = true;
+                setState(() {});
                 final box = context.findRenderObject() as RenderBox;
                 final localPosition = box.globalToLocal(details.globalPosition);
                 final relative = localPosition.dx / box.size.width;
@@ -104,112 +154,119 @@ class _HomePageState extends State<HomePage> {
                     _controller.value.duration * relative.clamp(0, 1);
                 _controller.seekTo(position);
               },
-              onHorizontalDragStart: (details) {
-                final box = context.findRenderObject() as RenderBox;
-                final localPosition = box.globalToLocal(details.globalPosition);
-                final relative = localPosition.dx / box.size.width;
-                final position =
-                    _controller.value.duration * relative.clamp(0, 1);
-                _controller.seekTo(position);
+              onHorizontalDragEnd: (p) {
+                _hideOverlayTimer = Timer(const Duration(seconds: 1), () {
+                  showOverlayProgressBar = false;
+                  setState(() {});
+                });
               },
 
               child: VideoPlayer(_controller),
             ),
+
             // Slider(value: _controller., onChanged: onChanged)
             _ControlsOverlay(controller: _controller),
+            // : SizedBox.shrink(),
 
             ///
             ///
             ///
             ///
-            Column(
-              children: [
-                Text('Current volume: $_volumeValue'),
-                Row(
-                  children: [
-                    Text('Set Volume:'),
-                    Flexible(
-                      child: Slider(
-                        min: 0,
-                        max: 1,
-                        onChanged: (double value) async =>
-                            await _volumeController.setVolume(value),
-                        value: _volumeValue,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Volume is: $_currentVolume'),
-                    TextButton(
-                      onPressed: () async {
-                        _currentVolume = await _volumeController.getVolume();
-                        setState(() {});
-                      },
-                      child: Text('Get Volume'),
-                    ),
-                  ],
-                ),
-                if (Platform.isAndroid || Platform.isIOS)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            showOverlaySoundBar
+                ? Column(
                     children: [
-                      Text('Show system UI:${_volumeController.showSystemUI}'),
-                      TextButton(
-                        onPressed: () => setState(
-                          () => _volumeController.showSystemUI =
-                              !_volumeController.showSystemUI,
+                      Text('Current volume: $_volumeValue'),
+                      Row(
+                        children: [
+                          Text('Set Volume:'),
+                          Flexible(
+                            child: Slider(
+                              min: 0,
+                              max: 1,
+                              onChanged: (double value) async =>
+                                  await _volumeController.setVolume(value),
+                              value: _volumeValue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Volume is: $_currentVolume'),
+                          TextButton(
+                            onPressed: () async {
+                              _currentVolume = await _volumeController
+                                  .getVolume();
+                              setState(() {});
+                            },
+                            child: Text('Get Volume'),
+                          ),
+                        ],
+                      ),
+                      if (Platform.isAndroid || Platform.isIOS)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Show system UI:${_volumeController.showSystemUI}',
+                            ),
+                            TextButton(
+                              onPressed: () => setState(
+                                () => _volumeController.showSystemUI =
+                                    !_volumeController.showSystemUI,
+                              ),
+                              child: Text('Show/Hide UI'),
+                            ),
+                          ],
                         ),
-                        child: Text('Show/Hide UI'),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Is Muted:$_isMuted'),
+                          TextButton(
+                            onPressed: () async {
+                              await updateMuteStatus(true);
+                            },
+                            child: Text('Mute'),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              await updateMuteStatus(false);
+                            },
+                            child: Text('Unmute'),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          _isMuted = await _volumeController.isMuted();
+                          setState(() {});
+                        },
+                        child: Text('Update Mute Status'),
                       ),
                     ],
-                  ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Is Muted:$_isMuted'),
-                    TextButton(
-                      onPressed: () async {
-                        await updateMuteStatus(true);
-                      },
-                      child: Text('Mute'),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        await updateMuteStatus(false);
-                      },
-                      child: Text('Unmute'),
-                    ),
-                  ],
-                ),
-                TextButton(
-                  onPressed: () async {
-                    _isMuted = await _volumeController.isMuted();
-                    setState(() {});
-                  },
-                  child: Text('Update Mute Status'),
-                ),
-              ],
-            ),
+                  )
+                : SizedBox.shrink(),
 
             ///
             ///
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: VideoProgressIndicator(
-                _controller,
-                allowScrubbing: true,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+            showOverlayProgressBar
+                ? Align(
+                    alignment: Alignment.bottomCenter,
+                    child: VideoProgressIndicator(
+                      _controller,
+                      allowScrubbing: true,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
 
-                colors: const VideoProgressColors(
-                  playedColor: Colors.red,
-                  bufferedColor: Colors.grey,
-                  backgroundColor: Colors.white54,
-                ),
-              ),
-            ),
+                      colors: const VideoProgressColors(
+                        playedColor: Colors.red,
+                        bufferedColor: Colors.grey,
+                        backgroundColor: Colors.white54,
+                      ),
+                    ),
+                  )
+                : SizedBox.shrink(),
           ],
         ),
       ),
