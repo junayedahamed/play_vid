@@ -38,6 +38,9 @@ class PlayerViewModel extends ChangeNotifier {
   VideoRepeatMode _repeatMode = VideoRepeatMode.off;
   VideoRepeatMode get repeatMode => _repeatMode;
 
+  double _playbackSpeed = 1.0;
+  double get playbackSpeed => _playbackSpeed;
+
   double _dragStartVolume = 0;
   double _dragStartY = 0;
 
@@ -62,6 +65,7 @@ class PlayerViewModel extends ChangeNotifier {
 
     final newController = VideoPlayerController.file(file);
     await newController.initialize();
+    await newController.setPlaybackSpeed(_playbackSpeed);
 
     _controller = newController;
     _controller!.addListener(_videoListener);
@@ -164,8 +168,24 @@ class PlayerViewModel extends ChangeNotifier {
       _controller!.pause();
     } else {
       _controller!.play();
+      resetOverlayTimer();
     }
     notifyListeners();
+  }
+
+  void setPlaybackSpeed(double speed) {
+    _playbackSpeed = speed;
+    _controller?.setPlaybackSpeed(speed);
+    notifyListeners();
+  }
+
+  void resetOverlayTimer() {
+    if (!_showOverlayProgressBar) return;
+    _hideOverlayTimer?.cancel();
+    _hideOverlayTimer = Timer(const Duration(seconds: 2), () {
+      _showOverlayProgressBar = false;
+      notifyListeners();
+    });
   }
 
   void play() {
@@ -181,18 +201,12 @@ class PlayerViewModel extends ChangeNotifier {
   void handleTap() {
     if (_showOverlayProgressBar) {
       _showOverlayProgressBar = false;
+      _hideOverlayTimer?.cancel();
       notifyListeners();
       return;
     }
     _showOverlayProgressBar = true;
-    _hideOverlayTimer?.cancel();
-    _hideOverlayTimer = Timer(
-      const Duration(seconds: 2, milliseconds: 200),
-      () {
-        _showOverlayProgressBar = false;
-        notifyListeners();
-      },
-    );
+    resetOverlayTimer();
     notifyListeners();
   }
 
@@ -246,11 +260,7 @@ class PlayerViewModel extends ChangeNotifier {
   }
 
   void onHorizontalDragEnd(DragEndDetails details) {
-    _hideOverlayTimer?.cancel();
-    _hideOverlayTimer = Timer(const Duration(seconds: 1), () {
-      _showOverlayProgressBar = false;
-      notifyListeners();
-    });
+    resetOverlayTimer();
   }
 
   Future<void> updateMuteStatus(bool isMute) async {
@@ -279,12 +289,14 @@ class PlayerViewModel extends ChangeNotifier {
     if (_controller == null) return;
     final destination = _controller!.value.duration * value;
     _controller!.seekTo(destination);
+    resetOverlayTimer();
     notifyListeners();
   }
 
   void toggleAspectRatio() {
     _currentAspectRatioIndex =
         (_currentAspectRatioIndex + 1) % _aspectRatios.length;
+    resetOverlayTimer();
     notifyListeners();
   }
 
@@ -297,6 +309,7 @@ class PlayerViewModel extends ChangeNotifier {
     } else {
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     }
+    resetOverlayTimer();
   }
 
   void resetRotation() {

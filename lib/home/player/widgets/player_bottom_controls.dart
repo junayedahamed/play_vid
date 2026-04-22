@@ -26,6 +26,9 @@ class PlayerBottomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Container(
       padding: const EdgeInsets.only(bottom: 12),
       decoration: const BoxDecoration(
@@ -38,11 +41,37 @@ class PlayerBottomControls extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+          if (!isLandscape)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: onToggleAspectRatio,
+                    child: const Icon(
+                      CupertinoIcons.fullscreen,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: onToggleRotation,
+                    child: const Icon(
+                      CupertinoIcons.rotate_right,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              if (isLandscape)
                 CupertinoButton(
                   padding: EdgeInsets.zero,
                   onPressed: onToggleAspectRatio,
@@ -52,21 +81,6 @@ class PlayerBottomControls extends StatelessWidget {
                     size: 24,
                   ),
                 ),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: onToggleRotation,
-                  child: const Icon(
-                    CupertinoIcons.rotate_right,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
               CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: onToggleRepeat,
@@ -107,7 +121,18 @@ class PlayerBottomControls extends StatelessWidget {
                   size: 36,
                 ),
               ),
-              const SizedBox(width: 40), // Balanced spacing
+              if (isLandscape)
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: onToggleRotation,
+                  child: const Icon(
+                    CupertinoIcons.rotate_right,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                )
+              else
+                const SizedBox(width: 40),
             ],
           ),
         ],

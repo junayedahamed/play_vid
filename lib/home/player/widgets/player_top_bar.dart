@@ -3,16 +3,20 @@ import 'package:flutter/material.dart';
 
 class PlayerTopBar extends StatelessWidget {
   final String title;
+  final double playbackSpeed;
   final VoidCallback onBack;
   final VoidCallback onAudioSettings;
   final VoidCallback onBackgroundPlay;
+  final ValueChanged<double> onPlaybackSpeedChanged;
 
   const PlayerTopBar({
     super.key,
     required this.title,
+    required this.playbackSpeed,
     required this.onBack,
     required this.onAudioSettings,
     required this.onBackgroundPlay,
+    required this.onPlaybackSpeedChanged,
   });
 
   @override
@@ -52,11 +56,21 @@ class PlayerTopBar extends StatelessWidget {
             ),
             CupertinoButton(
               padding: EdgeInsets.zero,
-              onPressed: onAudioSettings,
-              child: const Icon(
-                CupertinoIcons.speaker_2,
-                color: Colors.white,
-                size: 24,
+              onPressed: () => _showSpeedMenu(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white, width: 1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${playbackSpeed}x',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
             CupertinoButton(
@@ -68,7 +82,38 @@ class PlayerTopBar extends StatelessWidget {
                 size: 24,
               ),
             ),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: onAudioSettings,
+              child: const Icon(
+                CupertinoIcons.speaker_2,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showSpeedMenu(BuildContext context) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: const Text('Playback Speed'),
+        actions: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((speed) {
+          return CupertinoActionSheetAction(
+            onPressed: () {
+              onPlaybackSpeedChanged(speed);
+              Navigator.pop(context);
+            },
+            child: Text('${speed}x'),
+          );
+        }).toList(),
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
         ),
       ),
     );

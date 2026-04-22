@@ -56,10 +56,13 @@ class Player extends StatelessWidget {
                       right: 0,
                       child: PlayerTopBar(
                         title: viewModel.currentTitle,
+                        playbackSpeed: viewModel.playbackSpeed,
                         onBack: () => Navigator.pop(context),
                         onAudioSettings: () =>
                             _showAudioDialog(context, viewModel),
                         onBackgroundPlay: viewModel.toggleBackgroundPlay,
+                        onPlaybackSpeedChanged: (speed) =>
+                            viewModel.setPlaybackSpeed(speed),
                       ),
                     ),
                   if (viewModel.showOverlaySoundBar)
