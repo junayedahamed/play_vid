@@ -1,7 +1,12 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class LocalVideoFetch extends ChangeNotifier {
+  LocalVideoFetch() {
+    downloadVideo();
+  }
   List<AssetEntity> videoList = [];
   bool isLoading = false;
 
@@ -29,6 +34,8 @@ class LocalVideoFetch extends ChangeNotifier {
           }
           videoList = allVideos;
         }
+
+        log('Fetched ${videoList.length} videos');
       } else {
         // Handle permission denied
         PhotoManager.openSetting();

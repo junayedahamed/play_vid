@@ -6,7 +6,8 @@ import 'package:video_player/video_player.dart';
 import 'package:volume_controller/volume_controller.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, required this.filePath});
+  final String filePath;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -25,10 +26,12 @@ class _HomePageState extends State<HomePage> {
   double _dragStartVolume = 0;
   double _dragStartY = 0;
   Timer? _hideOverlayTimer;
+  // final LocalVideoFetch localVideoFetch = LocalVideoFetch();
 
   @override
   void initState() {
-    _controller = VideoPlayerController.asset('assets/v.mp4')
+    // localVideoFetch.downloadVideo();
+    _controller = VideoPlayerController.file(File(widget.filePath))
       ..initialize().then((_) {
         setState(() {
           // play();
