@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Access photo library to display and play videos from your device</string>
+	<key>NSPhotoLibraryAddOnlyUsageDescription</key>
+	<string>Allow access to save videos</string>
 </dict>
 </plist>
