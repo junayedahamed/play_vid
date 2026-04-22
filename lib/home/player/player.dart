@@ -1,11 +1,13 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'player_view_model/player_view_model.dart';
+import 'widgets/player_top_bar.dart';
+import 'widgets/player_progress_bar.dart';
+import 'widgets/player_bottom_controls.dart';
+import 'widgets/player_volume_overlay.dart';
 
 class Player extends StatelessWidget {
   const Player({
@@ -30,7 +32,10 @@ class Player extends StatelessWidget {
 
         if (!viewModel.isInitialized) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CupertinoActivityIndicator(color: Colors.white),
+            ),
           );
         }
 
@@ -43,117 +48,32 @@ class Player extends StatelessWidget {
             body: Center(
               child: Stack(
                 children: [
-                  GestureDetector(
-                    onTap: viewModel.handleTap,
-                    onVerticalDragStart: viewModel.onVerticalDragStart,
-                    onVerticalDragUpdate: (details) {
-                      final box = context.findRenderObject() as RenderBox;
-                      viewModel.onVerticalDragUpdate(details, box.size.height);
-                    },
-                    onVerticalDragEnd: viewModel.onVerticalDragEnd,
-                    onHorizontalDragStart: viewModel.onHorizontalDragStart,
-                    onHorizontalDragUpdate: (details) {
-                      final box = context.findRenderObject() as RenderBox;
-                      viewModel.onHorizontalDragUpdate(details, box.size.width);
-                    },
-                    onHorizontalDragEnd: viewModel.onHorizontalDragEnd,
-                    child: Center(
-                      child: AspectRatio(
-                        aspectRatio:
-                            viewModel.currentAspectRatio ??
-                            viewModel.controller.value.aspectRatio,
-                        child: VideoPlayer(viewModel.controller),
-                      ),
-                    ),
-                  ),
+                  _buildVideoSurface(context, viewModel),
                   if (viewModel.showOverlayProgressBar)
                     Positioned(
-                      top: 40,
-                      left: 20,
-                      right: 20,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: () => Navigator.pop(context),
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              viewModel.currentTitle,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () =>
-                                _showAudioDialog(context, viewModel),
-                            icon: const Icon(
-                              Icons.music_note,
-                              color: Colors.white,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: viewModel.toggleBackgroundPlay,
-                            icon: const Icon(
-                              Icons.headset,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: PlayerTopBar(
+                        title: viewModel.currentTitle,
+                        onBack: () => Navigator.pop(context),
+                        onAudioSettings: () =>
+                            _showAudioDialog(context, viewModel),
+                        onBackgroundPlay: viewModel.toggleBackgroundPlay,
                       ),
                     ),
                   if (viewModel.showOverlaySoundBar)
-                    Column(
-                      children: [
-                        Text('Current volume: ${viewModel.volumeValue}'),
-                        Row(
-                          children: [
-                            const Text('Set Volume:'),
-                            Flexible(
-                              child: Slider(
-                                min: 0,
-                                max: 1,
-                                onChanged: (double value) =>
-                                    viewModel.setVolume(value),
-                                value: viewModel.volumeValue,
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (Platform.isAndroid || Platform.isIOS)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('Show system UI: ${viewModel.showSystemUI}'),
-                              TextButton(
-                                onPressed: viewModel.toggleSystemUI,
-                                child: const Text('Show/Hide UI'),
-                              ),
-                            ],
-                          ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('Is Muted: ${viewModel.isMuted}'),
-                            TextButton(
-                              onPressed: () => viewModel.updateMuteStatus(true),
-                              child: const Text('Mute'),
-                            ),
-                            TextButton(
-                              onPressed: () =>
-                                  viewModel.updateMuteStatus(false),
-                              child: const Text('Unmute'),
-                            ),
-                          ],
-                        ),
-                      ],
+                    Align(
+                      alignment: Alignment.center,
+                      child: PlayerVolumeOverlay(
+                        volume: viewModel.volumeValue,
+                        showSystemUI: viewModel.showSystemUI,
+                        isMuted: viewModel.isMuted,
+                        onVolumeChanged: viewModel.setVolume,
+                        onToggleSystemUI: viewModel.toggleSystemUI,
+                        onToggleMute: (mute) =>
+                            viewModel.updateMuteStatus(mute),
+                      ),
                     ),
                   if (viewModel.showOverlayProgressBar)
                     Align(
@@ -161,166 +81,23 @@ class Player extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                IconButton(
-                                  onPressed: viewModel.toggleAspectRatio,
-                                  icon: Icon(
-                                    viewModel.currentAspectRatio == null
-                                        ? CupertinoIcons.fullscreen
-                                        : viewModel.currentAspectRatio == 16 / 9
-                                        ? CupertinoIcons.rectangle_on_rectangle
-                                        : viewModel.currentAspectRatio == 4 / 3
-                                        ? CupertinoIcons.rectangle
-                                        : CupertinoIcons.square,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () =>
-                                      viewModel.toggleRotation(context),
-                                  icon: const Icon(
-                                    CupertinoIcons.rotate_right,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          PlayerProgressBar(
+                            position: viewModel.controller.value.position,
+                            duration: viewModel.controller.value.duration,
+                            onSeek: (val) => viewModel.onSliderSeek(val),
+                            formatDuration: _formatDuration,
                           ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Column(
-                              children: [
-                                SliderTheme(
-                                  data: SliderTheme.of(context).copyWith(
-                                    trackHeight: 4,
-                                    thumbShape: const RoundSliderThumbShape(
-                                      enabledThumbRadius: 6,
-                                    ),
-                                    overlayShape: const RoundSliderOverlayShape(
-                                      overlayRadius: 14,
-                                    ),
-                                    activeTrackColor: Colors.red,
-                                    inactiveTrackColor: Colors.white24,
-                                    thumbColor: Colors.red,
-                                  ),
-                                  child: Slider(
-                                    value: viewModel
-                                        .controller
-                                        .value
-                                        .position
-                                        .inMilliseconds
-                                        .toDouble()
-                                        .clamp(
-                                          0.0,
-                                          viewModel
-                                              .controller
-                                              .value
-                                              .duration
-                                              .inMilliseconds
-                                              .toDouble(),
-                                        ),
-                                    max: viewModel
-                                        .controller
-                                        .value
-                                        .duration
-                                        .inMilliseconds
-                                        .toDouble(),
-                                    onChanged: (value) {
-                                      final duration = viewModel
-                                          .controller
-                                          .value
-                                          .duration
-                                          .inMilliseconds;
-                                      if (duration > 0) {
-                                        viewModel.onSliderSeek(
-                                          value / duration,
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      _formatDuration(
-                                        viewModel.controller.value.position,
-                                      ),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatDuration(
-                                        viewModel.controller.value.duration,
-                                      ),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                          PlayerBottomControls(
+                            isPlaying: viewModel.controller.value.isPlaying,
+                            repeatMode: viewModel.repeatMode,
+                            onTogglePlay: viewModel.togglePlay,
+                            onNext: viewModel.playNext,
+                            onPrevious: viewModel.playPrevious,
+                            onToggleRepeat: viewModel.cycleRepeatMode,
+                            onToggleAspectRatio: viewModel.toggleAspectRatio,
+                            onToggleRotation: () =>
+                                viewModel.toggleRotation(context),
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton(
-                                iconSize: 48,
-                                icon: const Icon(
-                                  Icons.skip_previous,
-                                  color: Colors.white,
-                                ),
-                                onPressed: viewModel.playPrevious,
-                              ),
-                              IconButton(
-                                iconSize: 64,
-                                icon: Icon(
-                                  viewModel.controller.value.isPlaying
-                                      ? Icons.pause_circle
-                                      : Icons.play_circle,
-                                  color: Colors.white,
-                                ),
-                                onPressed: viewModel.togglePlay,
-                              ),
-                              IconButton(
-                                iconSize: 48,
-                                icon: const Icon(
-                                  Icons.skip_next,
-                                  color: Colors.white,
-                                ),
-                                onPressed: viewModel.playNext,
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  viewModel.repeatMode == VideoRepeatMode.off
-                                      ? Icons.repeat
-                                      : viewModel.repeatMode ==
-                                            VideoRepeatMode.one
-                                      ? Icons.repeat_one
-                                      : viewModel.repeatMode ==
-                                            VideoRepeatMode.all
-                                      ? Icons.repeat_on
-                                      : Icons.shuffle,
-                                  color:
-                                      viewModel.repeatMode ==
-                                          VideoRepeatMode.off
-                                      ? Colors.white54
-                                      : Colors.white,
-                                ),
-                                onPressed: viewModel.cycleRepeatMode,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
                         ],
                       ),
                     ),
@@ -330,6 +107,32 @@ class Player extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildVideoSurface(BuildContext context, PlayerViewModel viewModel) {
+    return GestureDetector(
+      onTap: viewModel.handleTap,
+      onVerticalDragStart: viewModel.onVerticalDragStart,
+      onVerticalDragUpdate: (details) {
+        final box = context.findRenderObject() as RenderBox;
+        viewModel.onVerticalDragUpdate(details, box.size.height);
+      },
+      onVerticalDragEnd: viewModel.onVerticalDragEnd,
+      onHorizontalDragStart: viewModel.onHorizontalDragStart,
+      onHorizontalDragUpdate: (details) {
+        final box = context.findRenderObject() as RenderBox;
+        viewModel.onHorizontalDragUpdate(details, box.size.width);
+      },
+      onHorizontalDragEnd: viewModel.onHorizontalDragEnd,
+      child: Center(
+        child: AspectRatio(
+          aspectRatio:
+              viewModel.currentAspectRatio ??
+              viewModel.controller.value.aspectRatio,
+          child: VideoPlayer(viewModel.controller),
+        ),
+      ),
     );
   }
 }
@@ -345,38 +148,47 @@ String _formatDuration(Duration duration) {
 }
 
 void _showAudioDialog(BuildContext context, PlayerViewModel viewModel) {
-  showDialog(
+  showCupertinoDialog(
     context: context,
     builder: (context) {
       bool tempValue = viewModel.isAudioDisabled;
       return StatefulBuilder(
         builder: (context, setDialogState) {
-          return AlertDialog(
+          return CupertinoAlertDialog(
             title: const Text('Audio Settings'),
-            content: Row(
-              children: [
-                Checkbox(
-                  value: tempValue,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      tempValue = value ?? false;
-                    });
-                  },
+            content: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  setDialogState(() => tempValue = !tempValue);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      tempValue
+                          ? CupertinoIcons.check_mark_circled_solid
+                          : CupertinoIcons.circle,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('Disable Audio'),
+                  ],
                 ),
-                const Text('Disable Audio'),
-              ],
+              ),
             ),
             actions: [
-              TextButton(
+              CupertinoDialogAction(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancel'),
               ),
-              TextButton(
+              CupertinoDialogAction(
+                isDefaultAction: true,
                 onPressed: () {
                   viewModel.setAudioDisabled(tempValue);
                   Navigator.pop(context);
                 },
-                child: const Text('OK'),
+                child: const Text('Apply'),
               ),
             ],
           );
