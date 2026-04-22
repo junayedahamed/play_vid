@@ -22,12 +22,14 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   /// Custom method to update media metadata from the video player.
   void updateMetadata({required String title, required Duration duration}) {
-    mediaItem.add(MediaItem(
-      id: 'video_audio_sync',
-      album: 'Video Player',
-      title: title,
-      duration: duration,
-    ));
+    mediaItem.add(
+      MediaItem(
+        id: 'video_audio_sync',
+        album: 'Video Player',
+        title: title,
+        duration: duration,
+      ),
+    );
   }
 
   /// Custom method to sync playback state with the video player.

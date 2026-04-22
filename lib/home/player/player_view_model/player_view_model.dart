@@ -304,30 +304,34 @@ class PlayerViewModel extends ChangeNotifier {
   /// Resumes video playback.
   void play() {
     _controller?.play();
-    (audioHandler as AudioPlayerHandler).setPlaybackState(audioHandler.playbackState.value.copyWith(
-      playing: true,
-      controls: [
-        MediaControl.skipToPrevious,
-        MediaControl.pause,
-        MediaControl.stop,
-        MediaControl.skipToNext,
-      ],
-    ));
+    (audioHandler as AudioPlayerHandler).setPlaybackState(
+      audioHandler.playbackState.value.copyWith(
+        playing: true,
+        controls: [
+          MediaControl.skipToPrevious,
+          MediaControl.pause,
+          MediaControl.stop,
+          MediaControl.skipToNext,
+        ],
+      ),
+    );
     notifyListeners();
   }
 
   /// Pauses video playback.
   void pause() {
     _controller?.pause();
-    (audioHandler as AudioPlayerHandler).setPlaybackState(audioHandler.playbackState.value.copyWith(
-      playing: false,
-      controls: [
-        MediaControl.skipToPrevious,
-        MediaControl.play,
-        MediaControl.stop,
-        MediaControl.skipToNext,
-      ],
-    ));
+    (audioHandler as AudioPlayerHandler).setPlaybackState(
+      audioHandler.playbackState.value.copyWith(
+        playing: false,
+        controls: [
+          MediaControl.skipToPrevious,
+          MediaControl.play,
+          MediaControl.stop,
+          MediaControl.skipToNext,
+        ],
+      ),
+    );
     notifyListeners();
   }
 
