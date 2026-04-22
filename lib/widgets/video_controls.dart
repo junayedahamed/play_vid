@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:better_player/better_player.dart';
+import 'package:better_player_plus/better_player_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:play_vid/providers/device_controls_provider.dart';
 import 'package:play_vid/services/subtitle_service.dart';

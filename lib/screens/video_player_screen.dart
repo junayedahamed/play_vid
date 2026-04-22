@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
-import 'package:better_player/better_player.dart';
+import 'package:better_player_plus/better_player_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:play_vid/providers/video_provider.dart';
 import '../widgets/video_controls.dart';
 import '../widgets/brightness_volume_overlay.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
-  const VideoPlayerScreen({Key? key}) : super(key: key);
+  const VideoPlayerScreen({super.key});
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
