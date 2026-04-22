@@ -14,9 +14,8 @@ class DownloadvideoFetch extends ChangeNotifier {
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
       if (ps.isAuth) {
         // Fetch all video albums
-        final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
-          type: RequestType.video,
-        );
+        final List<AssetPathEntity> albums =
+            await PhotoManager.getAssetPathList(type: RequestType.video);
 
         if (albums.isNotEmpty) {
           // Fetch all videos from all albums or just the "Recent" one (usually the first)
