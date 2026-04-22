@@ -2,22 +2,33 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'player_view_model/player_view_model.dart';
 
 class Player extends StatelessWidget {
-  const Player({super.key, required this.filePath});
-  final String filePath;
+  const Player({
+    super.key,
+    required this.assetEntitys,
+    required this.filepath,
+    required this.currentIndex,
+  });
+  final List<AssetEntity> assetEntitys;
+  final String filepath;
+  final int currentIndex;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => PlayerViewModel(filePath: filePath),
+      create: (_) => PlayerViewModel(
+        assetEntities: assetEntitys,
+        currentIndex: currentIndex,
+      ),
       builder: (context, _) {
         final viewModel = context.watch<PlayerViewModel>();
 
-        if (!viewModel.controller.value.isInitialized) {
+        if (!viewModel.isInitialized) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -55,6 +66,49 @@ class Player extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (viewModel.showOverlayProgressBar)
+                    Positioned(
+                      top: 40,
+                      left: 20,
+                      right: 20,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              viewModel.currentTitle,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () =>
+                                _showAudioDialog(context, viewModel),
+                            icon: const Icon(
+                              Icons.music_note,
+                              color: Colors.white,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: viewModel.toggleBackgroundPlay,
+                            icon: const Icon(
+                              Icons.headset,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   if (viewModel.showOverlaySoundBar)
                     Column(
                       children: [
@@ -225,7 +279,7 @@ class Player extends StatelessWidget {
                                   Icons.skip_previous,
                                   color: Colors.white,
                                 ),
-                                onPressed: () {},
+                                onPressed: viewModel.playPrevious,
                               ),
                               IconButton(
                                 iconSize: 64,
@@ -243,7 +297,26 @@ class Player extends StatelessWidget {
                                   Icons.skip_next,
                                   color: Colors.white,
                                 ),
-                                onPressed: () {},
+                                onPressed: viewModel.playNext,
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  viewModel.repeatMode == VideoRepeatMode.off
+                                      ? Icons.repeat
+                                      : viewModel.repeatMode ==
+                                            VideoRepeatMode.one
+                                      ? Icons.repeat_one
+                                      : viewModel.repeatMode ==
+                                            VideoRepeatMode.all
+                                      ? Icons.repeat_on
+                                      : Icons.shuffle,
+                                  color:
+                                      viewModel.repeatMode ==
+                                          VideoRepeatMode.off
+                                      ? Colors.white54
+                                      : Colors.white,
+                                ),
+                                onPressed: viewModel.cycleRepeatMode,
                               ),
                             ],
                           ),
@@ -269,4 +342,46 @@ String _formatDuration(Duration duration) {
     return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
   return "$twoDigitMinutes:$twoDigitSeconds";
+}
+
+void _showAudioDialog(BuildContext context, PlayerViewModel viewModel) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      bool tempValue = viewModel.isAudioDisabled;
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Audio Settings'),
+            content: Row(
+              children: [
+                Checkbox(
+                  value: tempValue,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      tempValue = value ?? false;
+                    });
+                  },
+                ),
+                const Text('Disable Audio'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  viewModel.setAudioDisabled(tempValue);
+                  Navigator.pop(context);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }

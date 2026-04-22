@@ -1,13 +1,23 @@
-import 'dart:async';
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:video_player/video_player.dart';
-import 'package:volume_controller/volume_controller.dart';
+import "dart:async";
+import "dart:io";
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:photo_manager/photo_manager.dart";
+import "package:video_player/video_player.dart";
+import "package:volume_controller/volume_controller.dart";
+
+enum VideoRepeatMode { off, one, all, shuffle }
 
 class PlayerViewModel extends ChangeNotifier {
-  final String filePath;
-  late VideoPlayerController controller;
+  final List<AssetEntity> assetEntities;
+  int currentIndex;
+
+  VideoPlayerController? _controller;
+  VideoPlayerController get controller => _controller!;
+
+  bool get isInitialized =>
+      _controller != null && _controller!.value.isInitialized;
+
   final VolumeController _volumeController = VolumeController.instance;
 
   bool _showOverlayProgressBar = false;
@@ -22,6 +32,12 @@ class PlayerViewModel extends ChangeNotifier {
   bool _isMuted = false;
   bool get isMuted => _isMuted;
 
+  bool _isAudioDisabled = false;
+  bool get isAudioDisabled => _isAudioDisabled;
+
+  VideoRepeatMode _repeatMode = VideoRepeatMode.off;
+  VideoRepeatMode get repeatMode => _repeatMode;
+
   double _dragStartVolume = 0;
   double _dragStartY = 0;
 
@@ -34,39 +50,131 @@ class PlayerViewModel extends ChangeNotifier {
   int _currentAspectRatioIndex = 0;
   double? get currentAspectRatio => _aspectRatios[_currentAspectRatioIndex];
 
-  PlayerViewModel({required this.filePath}) {
+  String get currentTitle => assetEntities[currentIndex].title ?? "Unknown";
+
+  PlayerViewModel({required this.assetEntities, required this.currentIndex}) {
     _init();
   }
 
   Future<void> _init() async {
-    controller = VideoPlayerController.file(File(filePath));
-    await controller.initialize();
-    controller.addListener(_videoListener);
+    final file = await assetEntities[currentIndex].file;
+    if (file == null) return;
+
+    final newController = VideoPlayerController.file(file);
+    await newController.initialize();
+
+    _controller = newController;
+    _controller!.addListener(_videoListener);
+
     _volumeValue = await _volumeController.getVolume();
     _isMuted = await _volumeController.isMuted();
+
+    if (_isAudioDisabled) {
+      await _controller!.setVolume(0);
+    }
+
+    _controller!.play();
     notifyListeners();
   }
 
   void _videoListener() {
+    if (_controller == null) return;
+    if (_controller!.value.position >= _controller!.value.duration) {
+      _handleVideoEnd();
+    }
     notifyListeners();
   }
 
-  void togglePlay() {
-    if (controller.value.isPlaying) {
-      controller.pause();
+  void _handleVideoEnd() {
+    if (_controller == null) return;
+    switch (_repeatMode) {
+      case VideoRepeatMode.one:
+        _controller!.seekTo(Duration.zero);
+        _controller!.play();
+        break;
+      case VideoRepeatMode.all:
+        playNext();
+        break;
+      case VideoRepeatMode.shuffle:
+        playNext();
+        break;
+      case VideoRepeatMode.off:
+        if (currentIndex < assetEntities.length - 1) {
+          playNext();
+        }
+        break;
+    }
+  }
+
+  Future<void> playNext() async {
+    if (currentIndex < assetEntities.length - 1) {
+      currentIndex++;
+    } else if (_repeatMode == VideoRepeatMode.all) {
+      currentIndex = 0;
     } else {
-      controller.play();
+      return;
+    }
+    await _reInitialize();
+  }
+
+  Future<void> playPrevious() async {
+    if (currentIndex > 0) {
+      currentIndex--;
+    } else if (_repeatMode == VideoRepeatMode.all) {
+      currentIndex = assetEntities.length - 1;
+    } else {
+      return;
+    }
+    await _reInitialize();
+  }
+
+  Future<void> _reInitialize() async {
+    if (_controller != null) {
+      _controller!.removeListener(_videoListener);
+      await _controller!.dispose();
+      _controller = null;
+      notifyListeners();
+    }
+    await _init();
+  }
+
+  void setAudioDisabled(bool disabled) {
+    _isAudioDisabled = disabled;
+    if (_controller != null) {
+      if (_isAudioDisabled) {
+        _controller!.setVolume(0);
+      } else {
+        _controller!.setVolume(_isMuted ? 0 : _volumeValue);
+      }
+    }
+    notifyListeners();
+  }
+
+  void cycleRepeatMode() {
+    _repeatMode = VideoRepeatMode
+        .values[(_repeatMode.index + 1) % VideoRepeatMode.values.length];
+    notifyListeners();
+  }
+
+  void toggleBackgroundPlay() {}
+
+  void togglePlay() {
+    if (_controller == null) return;
+    if (_controller!.value.isPlaying) {
+      _controller!.pause();
+    } else {
+      _controller!.play();
     }
     notifyListeners();
   }
 
   void play() {
-    controller.play();
+    _controller?.play();
     notifyListeners();
   }
 
   void pause() {
-    controller.pause();
+    _controller?.pause();
     notifyListeners();
   }
 
@@ -110,33 +218,30 @@ class PlayerViewModel extends ChangeNotifier {
   }
 
   void onHorizontalDragStart(DragStartDetails details) {
+    if (_controller == null) return;
     _showOverlayProgressBar = true;
     _dragStartX = details.globalPosition.dx;
-    _dragStartPosition = controller.value.position;
+    _dragStartPosition = _controller!.value.position;
     _hideOverlayTimer?.cancel();
     notifyListeners();
   }
 
   void onHorizontalDragUpdate(DragUpdateDetails details, double width) {
+    if (_controller == null) return;
     _showOverlayProgressBar = true;
-    // Calculate drag distance from start point
     final deltaX = details.globalPosition.dx - _dragStartX;
-
-    // Use a sensitivity factor to make seeking less extreme.
-    // 0.2 means a full screen drag moves through 20% of the video.
     const sensitivity = 0.2;
     final seekRelative = (deltaX / width) * sensitivity;
-
-    final seekDuration = controller.value.duration * seekRelative;
+    final seekDuration = _controller!.value.duration * seekRelative;
     var newPosition = _dragStartPosition + seekDuration;
 
     if (newPosition < Duration.zero) {
       newPosition = Duration.zero;
-    } else if (newPosition > controller.value.duration) {
-      newPosition = controller.value.duration;
+    } else if (newPosition > _controller!.value.duration) {
+      newPosition = _controller!.value.duration;
     }
 
-    controller.seekTo(newPosition);
+    _controller!.seekTo(newPosition);
     notifyListeners();
   }
 
@@ -171,8 +276,9 @@ class PlayerViewModel extends ChangeNotifier {
   }
 
   void onSliderSeek(double value) {
-    final destination = controller.value.duration * value;
-    controller.seekTo(destination);
+    if (_controller == null) return;
+    final destination = _controller!.value.duration * value;
+    _controller!.seekTo(destination);
     notifyListeners();
   }
 
@@ -199,8 +305,10 @@ class PlayerViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    controller.removeListener(_videoListener);
-    controller.dispose();
+    if (_controller != null) {
+      _controller!.removeListener(_videoListener);
+      _controller!.dispose();
+    }
     _hideOverlayTimer?.cancel();
     super.dispose();
   }

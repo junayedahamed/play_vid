@@ -24,10 +24,15 @@ class MyDownloadVodeos extends StatelessWidget {
                       onTap: () async {
                         final file = await video.file;
                         if (file == null) return;
+                        if (!context.mounted) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => Player(filePath: file.path),
+                            builder: (context) => Player(
+                              assetEntitys: localVideoFetch.videoList,
+                              filepath: file.path,
+                              currentIndex: index,
+                            ),
                           ),
                         );
                       },
