@@ -103,6 +103,12 @@ class Player extends StatelessWidget {
   }
 
   Widget _buildVideoSurface(BuildContext context, PlayerViewModel viewModel) {
+    // if (viewModel.controller == null) {
+    //   return const Center(
+    //     child: CupertinoActivityIndicator(color: Colors.white),
+    //   );
+    // }
+
     // We use a gesture detector that covers the entire stack area
     return GestureDetector(
       // Toggle overlay on tap anywhere

@@ -199,10 +199,12 @@ class PlayerViewModel extends ChangeNotifier {
   /// Disposes of the current controller and re-runs initialization for a new video index.
   Future<void> _reInitialize() async {
     if (_controller != null) {
-      _controller!.removeListener(_videoListener);
-      await _controller!.dispose();
-      _controller = null;
-      notifyListeners();
+      final oldController = _controller;
+      _controller = null; // Set to null before disposal
+      notifyListeners(); // Notify UI that controller is null (will show loader)
+
+      oldController!.removeListener(_videoListener);
+      await oldController.dispose();
     }
     await _init();
   }
