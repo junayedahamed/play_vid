@@ -35,7 +35,9 @@ class PlayerVolumeOverlay extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.7), // Darker for better visibility
+        color: Colors.black.withValues(
+          alpha: 0.7,
+        ), // Darker for better visibility
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
