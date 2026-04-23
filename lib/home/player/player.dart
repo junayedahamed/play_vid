@@ -26,6 +26,9 @@ class Player extends StatelessWidget {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         viewModel.resetRotation();
+        if (!viewModel.isBackgroundPlay) {
+          viewModel.stop();
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.black,

@@ -227,14 +227,23 @@ class PlayerViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Toggles background playback (currently a placeholder).
+  /// Toggles background playback.
   void toggleBackgroundPlay(BuildContext context) {
-    _isBackgroundPlay = !_isBackgroundPlay;
-    if (_isBackgroundPlay) {
-      // Pop the player screen to show the floating bar in the list view
-      Navigator.pop(context);
-    }
+    _isBackgroundPlay = true;
+    // Pop the player screen to show the floating bar in the list view
+    Navigator.pop(context);
     notifyListeners();
+  }
+
+  /// Stops the current video and clears the controller.
+  Future<void> stop() async {
+    if (_controller != null) {
+      _controller!.removeListener(_videoListener);
+      await _controller!.dispose();
+      _controller = null;
+      _isBackgroundPlay = false;
+      notifyListeners();
+    }
   }
 
   /// Exits background mode and returns to full video player.
