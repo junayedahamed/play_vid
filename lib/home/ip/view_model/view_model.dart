@@ -192,7 +192,7 @@ class IPplayerViewModel extends ChangeNotifier {
 
       _volumeValue = await _volumeController.getVolume();
       _isMuted = await _volumeController.isMuted();
-      _brightnessValue = await ScreenBrightness().application;
+      _brightnessValue = await ScreenBrightness().current;
 
       if (_isAudioDisabled) {
         await _controller!.setVolume(0);
