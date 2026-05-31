@@ -174,6 +174,7 @@ class PlayerViewModel extends ChangeNotifier {
 
     _volumeValue = await _volumeController.getVolume();
     _isMuted = await _volumeController.isMuted();
+    // ignore: deprecated_member_use
     _brightnessValue = await ScreenBrightness().current;
 
     if (_isAudioDisabled) {
