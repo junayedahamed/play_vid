@@ -58,7 +58,9 @@ class VideoTile extends StatelessWidget {
                       width: 110,
                       height: 70,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.05),
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.05,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: FutureBuilder(
@@ -80,10 +82,10 @@ class VideoTile extends StatelessWidget {
                             );
                           }
                           return Shimmer.fromColors(
-                            baseColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.1),
-                            highlightColor: theme.colorScheme.outlineVariant.withValues(
-                              alpha: 0.05,
-                            ),
+                            baseColor: theme.colorScheme.outlineVariant
+                                .withValues(alpha: 0.1),
+                            highlightColor: theme.colorScheme.outlineVariant
+                                .withValues(alpha: 0.05),
                             child: Container(
                               decoration: BoxDecoration(
                                 color: Colors.white,
@@ -179,16 +181,16 @@ class VideoTile extends StatelessWidget {
                   ),
                 ),
                 // Action Menu
-                IconButton(
-                  onPressed: () {
-                    // TODO: Implement more options
-                  },
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: theme.hintColor.withValues(alpha: 0.6),
-                    size: 20,
-                  ),
-                ),
+                // IconButton(
+                //   onPressed: () {
+                //     //
+                //   },
+                //   icon: Icon(
+                //     Icons.more_vert,
+                //     color: theme.hintColor.withValues(alpha: 0.6),
+                //     size: 20,
+                //   ),
+                // ),
               ],
             ),
           ),

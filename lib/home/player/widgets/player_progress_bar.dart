@@ -51,7 +51,7 @@ class PlayerProgressBar extends StatelessWidget {
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
                 activeTrackColor: Colors.red,
-                inactiveTrackColor: Colors.white24,
+                inactiveTrackColor: Colors.white.withValues(alpha: 0.24),
                 thumbColor: Colors.red,
               ),
               child: Slider(

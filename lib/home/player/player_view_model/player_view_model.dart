@@ -174,7 +174,7 @@ class PlayerViewModel extends ChangeNotifier {
 
     _volumeValue = await _volumeController.getVolume();
     _isMuted = await _volumeController.isMuted();
-    _brightnessValue = await ScreenBrightness().current;
+    _brightnessValue = await ScreenBrightness().application;
 
     if (_isAudioDisabled) {
       await _controller!.setVolume(0);
@@ -385,7 +385,7 @@ class PlayerViewModel extends ChangeNotifier {
       _volumeController.setVolume(_volumeValue);
     } else if (_isDraggingBrightness) {
       _brightnessValue = (_dragStartBrightness + delta).clamp(0.0, 1.0);
-      ScreenBrightness().setScreenBrightness(_brightnessValue);
+      ScreenBrightness().setApplicationScreenBrightness(_brightnessValue);
     }
     notifyListeners();
   }
