@@ -16,7 +16,28 @@ class MyDownloadVideos extends StatelessWidget {
     final playerViewModel = context.read<PlayerViewModel>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Download Videos')),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      appBar: AppBar(
+        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text(
+          'PLAYVID',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2.0,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        actions: [
+          IconButton(onPressed: () {}, icon: const Icon(Icons.search_rounded)),
+          IconButton(
+            onPressed: () => localVideoFetch.downloadVideo(),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           localVideoFetch.isLoading
