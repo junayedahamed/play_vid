@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:play_vid/data/ip_tv_model.dart';
 import 'package:play_vid/home/ip/view_model/ip_view_model.dart';
 import 'package:play_vid/home/ip/view/widgets/tv_channel_grid.dart';
+import 'package:play_vid/home/ip/view/widgets/tv_list_shimmer.dart';
 
 class TvListView extends StatelessWidget {
   TvListView({super.key});
@@ -67,21 +68,7 @@ class TvListView extends StatelessWidget {
           listenable: viewModel,
           builder: (context, child) {
             if (viewModel.isLoading) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Fetching streams...',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              return const TvListShimmer();
             }
 
             final allTv = viewModel.tvList
