@@ -150,8 +150,9 @@ class TvListView extends StatelessWidget {
   IconData _getIconForTitle(String title) {
     final lower = title.toLowerCase();
     if (lower.contains('news')) return Icons.article;
-    if (lower.contains('sport') || lower.contains('football'))
+    if (lower.contains('sport') || lower.contains('football')) {
       return Icons.sports_soccer;
+    }
     if (lower.contains('movie') || lower.contains('cinema')) return Icons.movie;
     if (lower.contains('music')) return Icons.music_note;
     return Icons.tv;
