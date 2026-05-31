@@ -35,12 +35,13 @@ class IpVideoSurface extends StatelessWidget {
         width: double.infinity,
         height: double.infinity,
         child: Center(
-          child: AspectRatio(
-            aspectRatio:
-                viewModel.currentAspectRatio ??
-                viewModel.controller.value.aspectRatio,
-            child: VideoPlayer(viewModel.controller),
-          ),
+          child: viewModel.isInitialized
+              ? AspectRatio(
+                  aspectRatio: viewModel.currentAspectRatio ??
+                      viewModel.controller.value.aspectRatio,
+                  child: VideoPlayer(viewModel.controller),
+                )
+              : const CircularProgressIndicator(),
         ),
       ),
     );
