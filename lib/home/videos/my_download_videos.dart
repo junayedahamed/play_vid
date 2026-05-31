@@ -3,7 +3,7 @@ import 'package:play_vid/home/ip/view/tv_list_view.dart';
 import 'package:play_vid/home/player/player.dart';
 import 'package:play_vid/home/player/player_view_model/player_view_model.dart';
 import 'package:play_vid/home/player/widgets/floating_audio_player.dart';
-import 'package:play_vid/home/videos/widgets/song_tile.dart';
+import 'package:play_vid/home/videos/widgets/video_tile.dart';
 import 'package:play_vid/home/videos/view_model/local_video_fetch.dart';
 import 'package:provider/provider.dart';
 
@@ -26,8 +26,8 @@ class MyDownloadVideos extends StatelessWidget {
                   itemCount: localVideoFetch.videoList.length,
                   itemBuilder: (context, index) {
                     final video = localVideoFetch.videoList[index];
-                    return SongTile(
-                      song: video,
+                    return VideoTile(
+                      video: video,
                       onTap: () async {
                         playerViewModel.updateAssets(
                           localVideoFetch.videoList,
