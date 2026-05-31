@@ -16,7 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _pushToVideoScreen() {
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -29,17 +29,10 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.play_circle_filled_rounded,
-              size: 80,
-              color: Colors.blue,
-            ),
-            SizedBox(height: 20),
-            CircularProgressIndicator(),
-          ],
+        child: Icon(
+          Icons.play_circle_filled_rounded,
+          size: 100,
+          color: Colors.blue,
         ),
       ),
     );
