@@ -29,7 +29,7 @@ class FloatingAudioPlayer extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -77,7 +77,7 @@ class FloatingAudioPlayer extends StatelessWidget {
                         Text(
                           "Background Audio Mode",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 11,
                           ),
                         ),

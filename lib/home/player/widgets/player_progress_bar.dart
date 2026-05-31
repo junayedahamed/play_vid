@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class PlayerProgressBar extends StatelessWidget {
@@ -46,11 +45,25 @@ class PlayerProgressBar extends StatelessWidget {
           SizedBox(
             height: 30,
             width: double.infinity,
-            child: CupertinoSlider(
-              activeColor: CupertinoColors.systemRed,
-              thumbColor: CupertinoColors.systemRed,
-              value: value,
-              onChanged: onSeek,
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 4,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                activeTrackColor: Colors.red,
+                inactiveTrackColor: Colors.white.withValues(alpha: 0.24),
+                thumbColor: Colors.red,
+              ),
+              child: Slider(
+                value: value,
+                onChanged: onSeek,
+                onChangeStart: (_) {
+                  // Optional: could used to pause while seeking if desired
+                },
+                onChangeEnd: (_) {
+                  // Optional: could used to resume after seeking
+                },
+              ),
             ),
           ),
         ],

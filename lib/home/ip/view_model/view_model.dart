@@ -2,30 +2,41 @@ import "dart:async";
 import "dart:io";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:photo_manager/photo_manager.dart";
+import "package:play_vid/data/ip_tv_model.dart";
+import "package:play_vid/home/player/player_view_model/player_view_model.dart";
 import "package:video_player/video_player.dart";
 import "package:volume_controller/volume_controller.dart";
 import "package:screen_brightness/screen_brightness.dart";
 
-enum VideoRepeatMode { off, one, all, shuffle }
-
-/// [PlayerViewModel] handles the business logic for the video player screen,
+/// [IPplayerViewModel] handles the business logic for the IP video player screen,
 /// including video initialization, playback controls, gesture handling for volume/seeking,
 /// and maintaining the state of the player UI.
-class PlayerViewModel extends ChangeNotifier {
-  /// List of [AssetEntity] representing the videos available to play.
-  final List<AssetEntity> assetEntities;
+class IPplayerViewModel extends ChangeNotifier {
+  /// List of [IpTvModel] representing the channels available to play.
+  final List<IpTvModel> channels;
 
-  /// Index of the currently playing video in [assetEntities].
+  /// Index of the currently playing channel in [channels].
   int currentIndex;
 
   /// The [VideoPlayerController] that manages the actual video playback.
   VideoPlayerController? _controller;
   VideoPlayerController get controller => _controller!;
 
+  /// Whether the controller is currently being initialized.
+  bool _isInitializing = false;
+  bool get isInitializing => _isInitializing;
+
+  /// Error message if video loading fails.
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
   /// Returns true if the video controller is initialized and ready.
   bool get isInitialized =>
       _controller != null && _controller!.value.isInitialized;
+
+  /// Returns true if there was an error during initialization or playback.
+  bool get hasError =>
+      _errorMessage != null || (_controller?.value.hasError ?? false);
 
   /// Instance of [VolumeController] for managing system and app volume.
   final VolumeController _volumeController = VolumeController.instance;
@@ -107,17 +118,19 @@ class PlayerViewModel extends ChangeNotifier {
   double? get currentAspectRatio => _aspectRatios[_currentAspectRatioIndex];
 
   /// The title of the current video asset.
-  String get currentTitle => assetEntities.isEmpty
+  String get currentTitle => channels.isEmpty
       ? ""
-      : assetEntities[currentIndex].title ?? "Unknown";
+      : channels[currentIndex].title ??
+            channels[currentIndex].channel ??
+            "Unknown";
 
   /// Whether the player is currently in background audio mode.
   bool _isBackgroundPlay = false;
   bool get isBackgroundPlay => _isBackgroundPlay;
 
-  PlayerViewModel({required this.assetEntities, required this.currentIndex}) {
+  IPplayerViewModel({required this.channels, required this.currentIndex}) {
     _setupListeners();
-    if (assetEntities.isNotEmpty) {
+    if (channels.isNotEmpty) {
       _init();
     }
   }
@@ -138,13 +151,13 @@ class PlayerViewModel extends ChangeNotifier {
   }
 
   /// Updates the playlist and index, then re-initializes.
-  Future<void> updateAssets(List<AssetEntity> assets, int index) async {
+  Future<void> updateAssets(List<IpTvModel> assets, int index) async {
     // Check if the exact same video is already playing
     if (_controller != null &&
-        assetEntities.isNotEmpty &&
+        channels.isNotEmpty &&
         index < assets.length &&
-        assetEntities.length == assets.length &&
-        assetEntities[currentIndex].id == assets[index].id) {
+        channels.length == assets.length &&
+        channels[currentIndex].url == assets[index].url) {
       if (!_controller!.value.isPlaying) {
         _controller!.play();
         notifyListeners();
@@ -152,8 +165,8 @@ class PlayerViewModel extends ChangeNotifier {
       return;
     }
 
-    assetEntities.clear();
-    assetEntities.addAll(assets);
+    channels.clear();
+    channels.addAll(assets);
     currentIndex = index;
     await _reInitialize();
   }
@@ -161,28 +174,39 @@ class PlayerViewModel extends ChangeNotifier {
   /// Initializes the video player by loading the file from [AssetEntity],
   /// setting up the controller, listeners, and initial volume states.
   Future<void> _init() async {
-    if (assetEntities.isEmpty) return;
-    final file = await assetEntities[currentIndex].file;
-    if (file == null) return;
+    if (channels.isEmpty) return;
+    final url = channels[currentIndex].url;
+    if (url == null) return;
 
-    final newController = VideoPlayerController.file(file);
-    await newController.initialize();
-    await newController.setPlaybackSpeed(_playbackSpeed);
-
-    _controller = newController;
-    _controller!.addListener(_videoListener);
-
-    _volumeValue = await _volumeController.getVolume();
-    _isMuted = await _volumeController.isMuted();
-    // ignore: deprecated_member_use
-    _brightnessValue = await ScreenBrightness().current;
-
-    if (_isAudioDisabled) {
-      await _controller!.setVolume(0);
-    }
-
-    _controller!.play();
+    _isInitializing = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      final newController = VideoPlayerController.networkUrl(Uri.parse(url));
+      await newController.initialize().timeout(const Duration(seconds: 15));
+      await newController.setPlaybackSpeed(_playbackSpeed);
+
+      _controller = newController;
+      _controller!.addListener(_videoListener);
+
+      _volumeValue = await _volumeController.getVolume();
+      _isMuted = await _volumeController.isMuted();
+      // ignore: deprecated_member_use
+      _brightnessValue = await ScreenBrightness().current;
+
+      if (_isAudioDisabled) {
+        await _controller!.setVolume(0);
+      }
+
+      _controller!.play();
+    } catch (e) {
+      debugPrint('Error initializing IP video player: $e');
+      _errorMessage = e.toString();
+    } finally {
+      _isInitializing = false;
+      notifyListeners();
+    }
   }
 
   /// Listener attached to the [VideoPlayerController] to monitor playback progress.
@@ -196,54 +220,13 @@ class PlayerViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Handles logic when a video finishes playing based on the current [_repeatMode].
+  /// Handles logic when a video finishes playing.
   void _handleVideoEnd() {
     if (_controller == null) return;
-    switch (_repeatMode) {
-      case VideoRepeatMode.one:
-        // Restart current video.
-        _controller!.seekTo(Duration.zero);
-        _controller!.play();
-        break;
-      case VideoRepeatMode.all:
-        // Play next, wrapping around to the start if at the end.
-        playNext();
-        break;
-      case VideoRepeatMode.shuffle:
-        // Play next (standard behavior here, could be enhanced with true randomization).
-        playNext();
-        break;
-      case VideoRepeatMode.off:
-        // Play next only if there are more videos in the list.
-        if (currentIndex < assetEntities.length - 1) {
-          playNext();
-        }
-        break;
-    }
-  }
-
-  /// Advances to the next video in the list.
-  Future<void> playNext() async {
-    if (currentIndex < assetEntities.length - 1) {
-      currentIndex++;
-    } else if (_repeatMode == VideoRepeatMode.all) {
-      currentIndex = 0;
-    } else {
-      return;
-    }
-    await _reInitialize();
-  }
-
-  /// Moves to the previous video in the list.
-  Future<void> playPrevious() async {
-    if (currentIndex > 0) {
-      currentIndex--;
-    } else if (_repeatMode == VideoRepeatMode.all) {
-      currentIndex = assetEntities.length - 1;
-    } else {
-      return;
-    }
-    await _reInitialize();
+    // For IP TV, we just stop or stay at the end.
+    // Simplified: no auto-next or repeat logic for live streams.
+    _controller!.pause();
+    notifyListeners();
   }
 
   /// Disposes of the current controller and re-runs initialization for a new video index.

@@ -1,43 +1,24 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class PlayerVolumeOverlay extends StatelessWidget {
-  final double volume;
-  final bool showSystemUI;
-  final bool isMuted;
-  final ValueChanged<double> onVolumeChanged;
-  final VoidCallback onToggleSystemUI;
-  final ValueChanged<bool> onToggleMute;
+class PlayerBrightnessOverlay extends StatelessWidget {
+  final double brightness;
 
-  const PlayerVolumeOverlay({
-    super.key,
-    required this.volume,
-    required this.showSystemUI,
-    required this.isMuted,
-    required this.onVolumeChanged,
-    required this.onToggleSystemUI,
-    required this.onToggleMute,
-  });
+  const PlayerBrightnessOverlay({super.key, required this.brightness});
 
   @override
   Widget build(BuildContext context) {
-    // Determine the speaker icon based on volume level and mute status
-    final IconData speakerIcon = isMuted || volume == 0
-        ? CupertinoIcons.speaker_slash_fill
-        : volume < 0.3
-        ? CupertinoIcons
-              .speaker_1_fill // Low sound
-        : volume < 0.7
-        ? CupertinoIcons
-              .speaker_2_fill // Medium sound
-        : CupertinoIcons.speaker_3_fill; // High sound
+    // Determine the brightness icon based on level
+    final IconData brightnessIcon = brightness < 0.3
+        ? CupertinoIcons.sun_min_fill
+        : brightness < 0.7
+        ? CupertinoIcons.sun_haze_fill
+        : CupertinoIcons.sun_max_fill;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(
-          alpha: 0.7,
-        ), // Darker for better visibility
+        color: Colors.black.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -51,9 +32,9 @@ class PlayerVolumeOverlay extends StatelessWidget {
                 width: 70,
                 height: 70,
                 child: CircularProgressIndicator(
-                  value: volume,
+                  value: brightness,
                   backgroundColor: Colors.white12,
-                  color: isMuted ? Colors.redAccent : Colors.white,
+                  color: Colors.white,
                   strokeWidth: 6,
                 ),
               ),
@@ -61,10 +42,10 @@ class PlayerVolumeOverlay extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(speakerIcon, color: Colors.white, size: 28),
+                  Icon(brightnessIcon, color: Colors.white, size: 28),
                   const SizedBox(height: 2),
                   Text(
-                    '${(volume * 100).toInt()}%',
+                    '${(brightness * 100).toInt()}%',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,

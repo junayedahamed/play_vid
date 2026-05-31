@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:play_vid/home/ip/view/tv_list_view.dart';
 import 'package:play_vid/home/player/player.dart';
 import 'package:play_vid/home/player/player_view_model/player_view_model.dart';
 import 'package:play_vid/home/player/widgets/floating_audio_player.dart';
+import 'package:play_vid/home/videos/widgets/video_tile.dart';
 import 'package:play_vid/home/videos/view_model/local_video_fetch.dart';
 import 'package:provider/provider.dart';
 
-class MyDownloadVodeos extends StatelessWidget {
-  const MyDownloadVodeos({super.key});
+class MyDownloadVideos extends StatelessWidget {
+  const MyDownloadVideos({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +16,28 @@ class MyDownloadVodeos extends StatelessWidget {
     final playerViewModel = context.read<PlayerViewModel>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Download Videos')),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      appBar: AppBar(
+        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text(
+          'PLAYVID',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2.0,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        actions: [
+          IconButton(onPressed: () {}, icon: const Icon(Icons.search_rounded)),
+          IconButton(
+            onPressed: () => localVideoFetch.downloadVideo(),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           localVideoFetch.isLoading
@@ -24,7 +47,8 @@ class MyDownloadVodeos extends StatelessWidget {
                   itemCount: localVideoFetch.videoList.length,
                   itemBuilder: (context, index) {
                     final video = localVideoFetch.videoList[index];
-                    return ListTile(
+                    return VideoTile(
+                      video: video,
                       onTap: () async {
                         playerViewModel.updateAssets(
                           localVideoFetch.videoList,
@@ -38,7 +62,6 @@ class MyDownloadVodeos extends StatelessWidget {
                           ),
                         );
                       },
-                      title: Text('Video ${video.title}'),
                     );
                   },
                 ),
@@ -47,6 +70,16 @@ class MyDownloadVodeos extends StatelessWidget {
             child: FloatingAudioPlayer(),
           ),
         ],
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TvListView()),
+          );
+        },
+        child: Icon(Icons.tv_rounded),
       ),
     );
   }

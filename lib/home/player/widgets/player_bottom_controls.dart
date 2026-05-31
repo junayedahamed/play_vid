@@ -29,6 +29,11 @@ class PlayerBottomControls extends StatelessWidget {
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
+    // We can check if these are "empty" callbacks or provided as null/placeholder
+    // But for now, we'll just check the repeatMode to decide if it's the "IP TV" simplified version
+    // If repeatMode is off and we want to hide nav, we can pass a flag,
+    // but the user wants to keep the UI same just without functionality.
+
     return Container(
       padding: const EdgeInsets.only(bottom: 12),
       decoration: const BoxDecoration(

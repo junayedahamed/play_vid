@@ -23,11 +23,11 @@ class PlayerTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.black54, Colors.transparent],
+          colors: [Colors.black.withValues(alpha: 0.54), Colors.transparent],
         ),
       ),
       child: SafeArea(
