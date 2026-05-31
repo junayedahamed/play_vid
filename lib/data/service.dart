@@ -16,8 +16,8 @@ class Service {
       } else {
         throw Exception('Failed to load TV list');
       }
-    } catch (e, stackTrace) {
-      print(stackTrace);
+    } catch (e) {
+      // print(stackTrace);
       throw Exception('Error fetching TV list: $e');
     }
   }
