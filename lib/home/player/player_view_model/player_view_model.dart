@@ -5,6 +5,7 @@ import "package:flutter/services.dart";
 import "package:photo_manager/photo_manager.dart";
 import "package:video_player/video_player.dart";
 import "package:volume_controller/volume_controller.dart";
+import "package:screen_brightness/screen_brightness.dart";
 
 enum VideoRepeatMode { off, one, all, shuffle }
 
@@ -37,6 +38,10 @@ class PlayerViewModel extends ChangeNotifier {
   bool _showOverlaySoundBar = false;
   bool get showOverlaySoundBar => _showOverlaySoundBar;
 
+  /// Whether to show the vertical brightness adjustment overlay.
+  bool _showOverlayBrightness = false;
+  bool get showOverlayBrightness => _showOverlayBrightness;
+
   /// Whether to show the horizontal seek adjustment overlay.
   bool _showOverlaySeek = false;
   bool get showOverlaySeek => _showOverlaySeek;
@@ -48,6 +53,10 @@ class PlayerViewModel extends ChangeNotifier {
   /// Current volume level (0.0 to 1.0).
   double _volumeValue = 0;
   double get volumeValue => _volumeValue;
+
+  /// Current brightness level (0.0 to 1.0).
+  double _brightnessValue = 0;
+  double get brightnessValue => _brightnessValue;
 
   /// Whether the player is currently muted.
   bool _isMuted = false;
@@ -68,6 +77,13 @@ class PlayerViewModel extends ChangeNotifier {
   /// Stores the volume level at the start of a vertical drag gesture.
   double _dragStartVolume = 0;
 
+  /// Stores the brightness level at the start of a vertical drag gesture.
+  double _dragStartBrightness = 0;
+
+  /// Flag to track if currently dragging volume or brightness
+  bool _isDraggingVolume = false;
+  bool _isDraggingBrightness = false;
+
   /// Stores the Y-coordinate at the start of a vertical drag gesture.
   double _dragStartY = 0;
 
@@ -76,6 +92,9 @@ class PlayerViewModel extends ChangeNotifier {
 
   /// Stores the video position at the start of a horizontal drag gesture.
   Duration _dragStartPosition = Duration.zero;
+
+  /// Subscription for screen brightness changes.
+  StreamSubscription<double>? _brightnessSubscription;
 
   /// Timer used to automatically hide the overlay after inactivity.
   Timer? _hideOverlayTimer;
@@ -97,13 +116,42 @@ class PlayerViewModel extends ChangeNotifier {
   bool get isBackgroundPlay => _isBackgroundPlay;
 
   PlayerViewModel({required this.assetEntities, required this.currentIndex}) {
+    _setupListeners();
     if (assetEntities.isNotEmpty) {
       _init();
     }
   }
 
+  /// Sets up listeners for system volume and brightness changes.
+  void _setupListeners() {
+    _volumeController.addListener((volume) {
+      _volumeValue = volume;
+      if (_showOverlaySoundBar) notifyListeners();
+    });
+
+    _brightnessSubscription = ScreenBrightness()
+        .onApplicationScreenBrightnessChanged
+        .listen((brightness) {
+          _brightnessValue = brightness;
+          if (_showOverlayBrightness) notifyListeners();
+        });
+  }
+
   /// Updates the playlist and index, then re-initializes.
   Future<void> updateAssets(List<AssetEntity> assets, int index) async {
+    // Check if the exact same video is already playing
+    if (_controller != null &&
+        assetEntities.isNotEmpty &&
+        index < assets.length &&
+        assetEntities.length == assets.length &&
+        assetEntities[currentIndex].id == assets[index].id) {
+      if (!_controller!.value.isPlaying) {
+        _controller!.play();
+        notifyListeners();
+      }
+      return;
+    }
+
     assetEntities.clear();
     assetEntities.addAll(assets);
     currentIndex = index;
@@ -126,6 +174,7 @@ class PlayerViewModel extends ChangeNotifier {
 
     _volumeValue = await _volumeController.getVolume();
     _isMuted = await _volumeController.isMuted();
+    _brightnessValue = await ScreenBrightness().current;
 
     if (_isAudioDisabled) {
       await _controller!.setVolume(0);
@@ -307,27 +356,46 @@ class PlayerViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Initiates vertical drag gesture handling for volume control.
-  void onVerticalDragStart(DragStartDetails details) async {
-    _showOverlaySoundBar = true;
+  /// Initiates vertical drag gesture handling for volume or brightness control.
+  void onVerticalDragStart(DragStartDetails details, double width) {
     _dragStartY = details.globalPosition.dy;
-    _dragStartVolume = await _volumeController.getVolume();
-    _volumeValue = _dragStartVolume;
+    if (details.globalPosition.dx < width / 2) {
+      // Left side: Brightness (Swapped per user request)
+      _isDraggingVolume = false;
+      _isDraggingBrightness = true;
+      _showOverlayBrightness = true;
+      _dragStartBrightness = _brightnessValue;
+    } else {
+      // Right side: Volume (Swapped per user request)
+      _isDraggingVolume = true;
+      _isDraggingBrightness = false;
+      _showOverlaySoundBar = true;
+      _dragStartVolume = _volumeValue;
+    }
     notifyListeners();
   }
 
-  /// Updates volume based on the vertical distance dragged.
+  /// Updates volume or brightness based on the vertical distance dragged.
   void onVerticalDragUpdate(DragUpdateDetails details, double height) {
     final deltaY = _dragStartY - details.globalPosition.dy;
-    final volumeDelta = deltaY / height;
-    _volumeValue = (_dragStartVolume + volumeDelta).clamp(0.0, 1.0);
-    _volumeController.setVolume(_volumeValue);
+    final delta = deltaY / height;
+
+    if (_isDraggingVolume) {
+      _volumeValue = (_dragStartVolume + delta).clamp(0.0, 1.0);
+      _volumeController.setVolume(_volumeValue);
+    } else if (_isDraggingBrightness) {
+      _brightnessValue = (_dragStartBrightness + delta).clamp(0.0, 1.0);
+      ScreenBrightness().setScreenBrightness(_brightnessValue);
+    }
     notifyListeners();
   }
 
-  /// Ends the vertical drag gesture and hides the volume overlay.
+  /// Ends the vertical drag gesture and hides the overlays.
   void onVerticalDragEnd(DragEndDetails details) {
     _showOverlaySoundBar = false;
+    _showOverlayBrightness = false;
+    _isDraggingVolume = false;
+    _isDraggingBrightness = false;
     notifyListeners();
   }
 
@@ -444,6 +512,8 @@ class PlayerViewModel extends ChangeNotifier {
       _controller!.removeListener(_videoListener);
       _controller!.dispose();
     }
+    _volumeController.removeListener();
+    _brightnessSubscription?.cancel();
     _hideOverlayTimer?.cancel();
     super.dispose();
   }
