@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:play_vid/home/ip/view/ip_tv_view.dart';
+import 'package:play_vid/home/ip/view/tv_list_view.dart';
 import 'package:play_vid/home/player/player.dart';
 import 'package:play_vid/home/player/player_view_model/player_view_model.dart';
 import 'package:play_vid/home/player/widgets/floating_audio_player.dart';
@@ -48,6 +50,16 @@ class MyDownloadVodeos extends StatelessWidget {
             child: FloatingAudioPlayer(),
           ),
         ],
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TvListView()),
+          );
+        },
+        child: Icon(Icons.tv_rounded),
       ),
     );
   }
