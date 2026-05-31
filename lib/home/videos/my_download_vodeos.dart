@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:play_vid/home/ip/view/ip_tv_view.dart';
 import 'package:play_vid/home/ip/view/tv_list_view.dart';
 import 'package:play_vid/home/player/player.dart';
 import 'package:play_vid/home/player/player_view_model/player_view_model.dart';
